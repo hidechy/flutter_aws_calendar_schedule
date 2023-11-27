@@ -37,14 +37,16 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   };
 
-  DateTime? selectedStartDate;
-  DateTime? selectedEndDate;
+  DateTime? selectedStartTime;
+  DateTime? selectedEndTime;
 
   late List<int> yearOption;
   List<int> monthOption = List.generate(12, (index) => (index + 1));
   late List<int>? dayOption;
   List<int> hourOption = List.generate(24, (index) => index);
   List<int> minuteOption = List.generate(60, (index) => index);
+
+  bool isSettingStartTime = true;
 
   ///
   void buildDayOption(DateTime selectedDate) {
@@ -69,8 +71,6 @@ class _HomeScreenState extends State<HomeScreen> {
     initialIndex = ((now.year - firstDate.year) * 12) + (now.month - firstDate.month);
 
     pageController = PageController(initialPage: initialIndex);
-
-    buildDayOption(selectedDate);
 
     pageController.addListener(() {
       monthDuration = (pageController.page! - initialIndex).round();
@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IconButton(
                 splashRadius: 20,
                 onPressed: () {
-                  selectedStartDate = selectedDate;
+                  selectedStartTime = selectedDate;
 
                   showDialog(
                     context: context,
@@ -141,199 +141,262 @@ class _HomeScreenState extends State<HomeScreen> {
 
   ///
   Widget buildAddScheduleDialog() {
-    return SimpleDialog(
-      titlePadding: EdgeInsets.zero,
-      title: Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                splashRadius: 10,
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.cancel),
-              ),
-              const Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'title',
-                  ),
-                ),
-              ),
-              IconButton(
-                splashRadius: 10,
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.send),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return buildSelectTimeDialog();
-                      },
-                    );
+    return StatefulBuilder(builder: (context, setState) {
+      return SimpleDialog(
+        titlePadding: EdgeInsets.zero,
+        title: Column(
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  splashRadius: 10,
+                  onPressed: () {
+                    Navigator.pop(context);
                   },
-                  child: Container(
-                    height: 150,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(DateFormat('yyyy').format(selectedStartDate!)),
-                        Text(DateFormat('MM/dd').format(selectedStartDate!)),
-                        Text(DateFormat('HH:mm').format(selectedStartDate!)),
-                      ],
+                  icon: const Icon(Icons.cancel),
+                ),
+                const Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'title',
                     ),
                   ),
                 ),
-              ),
-              const Icon(Icons.arrow_forward),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return buildSelectTimeDialog();
-                      },
-                    );
+                IconButton(
+                  splashRadius: 10,
+                  onPressed: () {
+                    Navigator.pop(context);
                   },
-                  child: Container(
-                    height: 150,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text((selectedEndDate == null) ? '----' : DateFormat('yyyy').format(selectedEndDate!)),
-                        Text((selectedEndDate == null) ? '--/--' : DateFormat('MM/dd').format(selectedEndDate!)),
-                        Text((selectedEndDate == null) ? '--:--' : DateFormat('HH:mm').format(selectedEndDate!)),
-                      ],
-                    ),
-                  ),
+                  icon: const Icon(Icons.send),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  ///
-  Widget buildSelectTimeDialog() {
-    return SimpleDialog(
-      titlePadding: EdgeInsets.zero,
-      title: Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                splashRadius: 10,
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.cancel),
-              ),
-              const Expanded(
-                child: Text(
-                  '日時を選択',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              IconButton(
-                splashRadius: 10,
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.send),
-              ),
-            ],
-          ),
-          SizedBox(
-            height: 150,
-            child: Row(
+              ],
+            ),
+            Row(
               children: [
                 Expanded(
-                  child: CupertinoPicker(
-                    itemExtent: 35,
-                    onSelectedItemChanged: (int index) {},
-                    children: yearOption.map((e) {
-                      return Container(
-                        height: 35,
-                        alignment: Alignment.center,
-                        child: Text(e.toString()),
+                  child: GestureDetector(
+                    onTap: () async {
+                      buildDayOption(selectedDate);
+                      isSettingStartTime = true;
+
+                      await showDialog(
+                        context: context,
+                        builder: (context) {
+                          return buildSelectTimeDialog();
+                        },
                       );
-                    }).toList(),
+
+                      setState(() {});
+                    },
+                    child: Container(
+                      height: 150,
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(DateFormat('yyyy').format(selectedStartTime!)),
+                          Text(DateFormat('MM/dd').format(selectedStartTime!)),
+                          Text(DateFormat('HH:mm').format(selectedStartTime!)),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
+                const Icon(Icons.arrow_forward),
                 Expanded(
-                  child: CupertinoPicker(
-                    itemExtent: 35,
-                    onSelectedItemChanged: (int index) {},
-                    children: monthOption.map((e) {
-                      return Container(
-                        height: 35,
-                        alignment: Alignment.center,
-                        child: Text(e.toString().padLeft(2, '0')),
+                  child: GestureDetector(
+                    onTap: () async {
+                      buildDayOption(selectedDate);
+                      isSettingStartTime = false;
+
+                      //こんな書き方あるんだな
+                      selectedEndTime ??= selectedStartTime;
+
+                      await showDialog(
+                        context: context,
+                        builder: (context) {
+                          return buildSelectTimeDialog();
+                        },
                       );
-                    }).toList(),
-                  ),
-                ),
-                Expanded(
-                  child: CupertinoPicker(
-                    itemExtent: 35,
-                    onSelectedItemChanged: (int index) {},
-                    children: dayOption!.map((e) {
-                      return Container(
-                        height: 35,
-                        alignment: Alignment.center,
-                        child: Text(e.toString().padLeft(2, '0')),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                Expanded(
-                  child: CupertinoPicker(
-                    itemExtent: 35,
-                    onSelectedItemChanged: (int index) {},
-                    children: hourOption.map((e) {
-                      return Container(
-                        height: 35,
-                        alignment: Alignment.center,
-                        child: Text(e.toString().padLeft(2, '0')),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                Expanded(
-                  child: CupertinoPicker(
-                    itemExtent: 35,
-                    onSelectedItemChanged: (int index) {},
-                    children: minuteOption.map((e) {
-                      return Container(
-                        height: 35,
-                        alignment: Alignment.center,
-                        child: Text(e.toString().padLeft(2, '0')),
-                      );
-                    }).toList(),
+
+                      setState(() {});
+                    },
+                    child: Container(
+                      height: 150,
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text((selectedEndTime == null) ? '----' : DateFormat('yyyy').format(selectedEndTime!)),
+                          Text((selectedEndTime == null) ? '--/--' : DateFormat('MM/dd').format(selectedEndTime!)),
+                          Text((selectedEndTime == null) ? '--:--' : DateFormat('HH:mm').format(selectedEndTime!)),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
+  }
+
+  ///
+  Widget buildSelectTimeDialog() {
+    return StatefulBuilder(builder: (context, setState) {
+      return SimpleDialog(
+        titlePadding: EdgeInsets.zero,
+        title: Column(
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  splashRadius: 10,
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.cancel),
+                ),
+                const Expanded(
+                  child: Text(
+                    '日時を選択',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                IconButton(
+                  splashRadius: 10,
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.send),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 150,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CupertinoPicker(
+                      itemExtent: 35,
+                      onSelectedItemChanged: (int index) {
+                        if (isSettingStartTime) {
+                          selectedStartTime = DateTime(yearOption[index], selectedStartTime!.month,
+                              selectedStartTime!.day, selectedStartTime!.hour, selectedStartTime!.minute);
+                        } else {
+                          selectedEndTime = DateTime(yearOption[index], selectedEndTime!.month, selectedEndTime!.day,
+                              selectedEndTime!.hour, selectedEndTime!.minute);
+                        }
+                      },
+                      children: yearOption.map((e) {
+                        return Container(
+                          height: 35,
+                          alignment: Alignment.center,
+                          child: Text(e.toString()),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  Expanded(
+                    child: CupertinoPicker(
+                      itemExtent: 35,
+                      onSelectedItemChanged: (int index) {
+                        if (isSettingStartTime) {
+                          selectedStartTime = DateTime(selectedStartTime!.year, monthOption[index],
+                              selectedStartTime!.day, selectedStartTime!.hour, selectedStartTime!.minute);
+
+                          buildDayOption(selectedStartTime!);
+                        } else {
+                          selectedEndTime = DateTime(selectedEndTime!.year, monthOption[index], selectedEndTime!.day,
+                              selectedEndTime!.hour, selectedEndTime!.minute);
+
+                          buildDayOption(selectedEndTime!);
+                        }
+
+                        setState(() {});
+                      },
+                      children: monthOption.map((e) {
+                        return Container(
+                          height: 35,
+                          alignment: Alignment.center,
+                          child: Text(e.toString().padLeft(2, '0')),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  Expanded(
+                    child: CupertinoPicker(
+                      itemExtent: 35,
+                      onSelectedItemChanged: (int index) {
+                        if (isSettingStartTime) {
+                          selectedStartTime = DateTime(selectedStartTime!.year, selectedStartTime!.month,
+                              dayOption![index], selectedStartTime!.hour, selectedStartTime!.minute);
+                        } else {
+                          selectedEndTime = DateTime(selectedEndTime!.year, selectedEndTime!.month, dayOption![index],
+                              selectedEndTime!.hour, selectedEndTime!.minute);
+                        }
+                      },
+                      children: dayOption!.map((e) {
+                        return Container(
+                          height: 35,
+                          alignment: Alignment.center,
+                          child: Text(e.toString().padLeft(2, '0')),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  Expanded(
+                    child: CupertinoPicker(
+                      itemExtent: 35,
+                      onSelectedItemChanged: (int index) {
+                        if (isSettingStartTime) {
+                          selectedStartTime = DateTime(selectedStartTime!.year, selectedStartTime!.month,
+                              selectedStartTime!.day, hourOption[index], selectedStartTime!.minute);
+                        } else {
+                          selectedEndTime = DateTime(selectedEndTime!.year, selectedEndTime!.month,
+                              selectedEndTime!.day, hourOption[index], selectedEndTime!.minute);
+                        }
+                      },
+                      children: hourOption.map((e) {
+                        return Container(
+                          height: 35,
+                          alignment: Alignment.center,
+                          child: Text(e.toString().padLeft(2, '0')),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  Expanded(
+                    child: CupertinoPicker(
+                      itemExtent: 35,
+                      onSelectedItemChanged: (int index) {
+                        if (isSettingStartTime) {
+                          selectedStartTime = DateTime(selectedStartTime!.year, selectedStartTime!.month,
+                              selectedStartTime!.day, selectedStartTime!.hour, minuteOption[index]);
+                        } else {
+                          selectedEndTime = DateTime(selectedEndTime!.year, selectedEndTime!.month,
+                              selectedEndTime!.day, selectedEndTime!.hour, minuteOption[index]);
+                        }
+                      },
+                      children: minuteOption.map((e) {
+                        return Container(
+                          height: 35,
+                          alignment: Alignment.center,
+                          child: Text(e.toString().padLeft(2, '0')),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   ///
