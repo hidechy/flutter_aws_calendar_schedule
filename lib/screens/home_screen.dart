@@ -1,6 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:udemy_aws_calendar_schedule/model/schedule.dart';
+import '../model/schedule.dart';
 
 // ignore: must_be_immutable
 class HomeScreen extends StatefulWidget {
@@ -36,17 +37,40 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
   };
 
+  DateTime? selectedStartDate;
+  DateTime? selectedEndDate;
+
+  late List<int> yearOption;
+  List<int> monthOption = List.generate(12, (index) => (index + 1));
+  late List<int>? dayOption;
+  List<int> hourOption = List.generate(24, (index) => index);
+  List<int> minuteOption = List.generate(60, (index) => index);
+
+  ///
+  void buildDayOption(DateTime selectedDate) {
+    List<int> list = [];
+
+    for (int i = 1; i <= DateTime(selectedDate.year, selectedDate.month + 1, 0).day; i++) {
+      list.add(i);
+    }
+
+    dayOption = list;
+  }
+
   ///
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+
+    yearOption = [now.year, now.year + 1];
 
     selectedDate = now;
 
     initialIndex = ((now.year - firstDate.year) * 12) + (now.month - firstDate.month);
 
     pageController = PageController(initialPage: initialIndex);
+
+    buildDayOption(selectedDate);
 
     pageController.addListener(() {
       monthDuration = (pageController.page! - initialIndex).round();
@@ -90,11 +114,224 @@ class _HomeScreenState extends State<HomeScreen> {
                 }).toList(),
               ),
             ),
-            Expanded(
-              child: createCalendarItem(),
+            Expanded(child: createCalendarItem()),
+            Container(
+              height: 50,
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                splashRadius: 20,
+                onPressed: () {
+                  selectedStartDate = selectedDate;
+
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return buildAddScheduleDialog();
+                    },
+                  );
+                },
+                icon: const Icon(Icons.add),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  ///
+  Widget buildAddScheduleDialog() {
+    return SimpleDialog(
+      titlePadding: EdgeInsets.zero,
+      title: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                splashRadius: 10,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.cancel),
+              ),
+              const Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'title',
+                  ),
+                ),
+              ),
+              IconButton(
+                splashRadius: 10,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.send),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return buildSelectTimeDialog();
+                      },
+                    );
+                  },
+                  child: Container(
+                    height: 150,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(DateFormat('yyyy').format(selectedStartDate!)),
+                        Text(DateFormat('MM/dd').format(selectedStartDate!)),
+                        Text(DateFormat('HH:mm').format(selectedStartDate!)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_forward),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return buildSelectTimeDialog();
+                      },
+                    );
+                  },
+                  child: Container(
+                    height: 150,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text((selectedEndDate == null) ? '----' : DateFormat('yyyy').format(selectedEndDate!)),
+                        Text((selectedEndDate == null) ? '--/--' : DateFormat('MM/dd').format(selectedEndDate!)),
+                        Text((selectedEndDate == null) ? '--:--' : DateFormat('HH:mm').format(selectedEndDate!)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  ///
+  Widget buildSelectTimeDialog() {
+    return SimpleDialog(
+      titlePadding: EdgeInsets.zero,
+      title: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                splashRadius: 10,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.cancel),
+              ),
+              const Expanded(
+                child: Text(
+                  '日時を選択',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              IconButton(
+                splashRadius: 10,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.send),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 150,
+            child: Row(
+              children: [
+                Expanded(
+                  child: CupertinoPicker(
+                    itemExtent: 35,
+                    onSelectedItemChanged: (int index) {},
+                    children: yearOption.map((e) {
+                      return Container(
+                        height: 35,
+                        alignment: Alignment.center,
+                        child: Text(e.toString()),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoPicker(
+                    itemExtent: 35,
+                    onSelectedItemChanged: (int index) {},
+                    children: monthOption.map((e) {
+                      return Container(
+                        height: 35,
+                        alignment: Alignment.center,
+                        child: Text(e.toString().padLeft(2, '0')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoPicker(
+                    itemExtent: 35,
+                    onSelectedItemChanged: (int index) {},
+                    children: dayOption!.map((e) {
+                      return Container(
+                        height: 35,
+                        alignment: Alignment.center,
+                        child: Text(e.toString().padLeft(2, '0')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoPicker(
+                    itemExtent: 35,
+                    onSelectedItemChanged: (int index) {},
+                    children: hourOption.map((e) {
+                      return Container(
+                        height: 35,
+                        alignment: Alignment.center,
+                        child: Text(e.toString().padLeft(2, '0')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoPicker(
+                    itemExtent: 35,
+                    onSelectedItemChanged: (int index) {},
+                    children: minuteOption.map((e) {
+                      return Container(
+                        height: 35,
+                        alignment: Alignment.center,
+                        child: Text(e.toString().padLeft(2, '0')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -114,12 +351,13 @@ class _HomeScreenState extends State<HomeScreen> {
         for (int i = 0; i < monthLastDay; i++) {
           listCache.add(
             CalendarItem(
-                day: i + 1,
-                now: now,
-                cacheDate: DateTime(date.year, date.month, i + 1),
-                scheduleList: scheduleMap[DateTime(date.year, date.month, i + 1)],
-                selectDate: selectDate,
-                selectedDate: selectedDate),
+              day: i + 1,
+              now: now,
+              cacheDate: DateTime(date.year, date.month, i + 1),
+              scheduleList: scheduleMap[DateTime(date.year, date.month, i + 1)],
+              selectDate: selectDate,
+              selectedDate: selectedDate,
+            ),
           );
 
           int repeatNumber = 7 - listCache.length;
@@ -196,9 +434,7 @@ class CalendarItem extends StatelessWidget {
                       ? Container()
                       : Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: scheduleList!.map((e) {
-                            return Text(e.title);
-                          }).toList(),
+                          children: scheduleList!.map((e) => Text(e.title)).toList(),
                         ),
                 ],
               ),
