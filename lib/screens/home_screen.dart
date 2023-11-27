@@ -12,6 +12,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  TextEditingController titleController = TextEditingController();
+
   DateTime now = DateTime.now();
 
   List<String> weekName = ['月', '火', '水', '木', '金', '土', '日'];
@@ -120,15 +122,19 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.centerRight,
               child: IconButton(
                 splashRadius: 20,
-                onPressed: () {
+                onPressed: () async {
                   selectedStartTime = selectedDate;
 
-                  showDialog(
+                  await showDialog(
                     context: context,
                     builder: (context) {
                       return buildAddScheduleDialog();
                     },
                   );
+
+                  titleController.clear();
+
+                  setState(() {});
                 },
                 icon: const Icon(Icons.add),
               ),
@@ -155,17 +161,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   icon: const Icon(Icons.cancel),
                 ),
-                const Expanded(
+                Expanded(
                   child: TextField(
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'title',
-                    ),
+                    controller: titleController,
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'title'),
                   ),
                 ),
                 IconButton(
                   splashRadius: 10,
                   onPressed: () {
+                    if (!validate()) {
+                      return;
+                    }
+
+                    var keyDate = DateTime(selectedStartTime!.year, selectedStartTime!.month, selectedStartTime!.day);
+
+                    if (scheduleMap.containsKey(keyDate)) {
+                      scheduleMap[keyDate]!.add(
+                        Schedule(title: titleController.text, startAt: selectedStartTime!, endAt: selectedEndTime!),
+                      );
+                    } else {
+                      scheduleMap[keyDate] = [
+                        Schedule(title: titleController.text, startAt: selectedStartTime!, endAt: selectedEndTime!)
+                      ];
+                    }
+
+                    selectedEndTime = null;
+
                     Navigator.pop(context);
                   },
                   icon: const Icon(Icons.send),
@@ -291,6 +313,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               selectedEndTime!.hour, selectedEndTime!.minute);
                         }
                       },
+                      scrollController: FixedExtentScrollController(
+                        initialItem: yearOption.indexOf(
+                          (isSettingStartTime) ? selectedStartTime!.year : selectedEndTime!.year,
+                        ),
+                      ),
                       children: yearOption.map((e) {
                         return Container(
                           height: 35,
@@ -318,6 +345,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         setState(() {});
                       },
+                      scrollController: FixedExtentScrollController(
+                        initialItem: monthOption.indexOf(
+                          (isSettingStartTime) ? selectedStartTime!.month : selectedEndTime!.month,
+                        ),
+                      ),
                       children: monthOption.map((e) {
                         return Container(
                           height: 35,
@@ -339,6 +371,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               selectedEndTime!.hour, selectedEndTime!.minute);
                         }
                       },
+                      scrollController: FixedExtentScrollController(
+                        initialItem: dayOption!.indexOf(
+                          (isSettingStartTime) ? selectedStartTime!.day : selectedEndTime!.day,
+                        ),
+                      ),
                       children: dayOption!.map((e) {
                         return Container(
                           height: 35,
@@ -360,6 +397,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               selectedEndTime!.day, hourOption[index], selectedEndTime!.minute);
                         }
                       },
+                      scrollController: FixedExtentScrollController(
+                        initialItem: hourOption.indexOf(
+                          (isSettingStartTime) ? selectedStartTime!.hour : selectedEndTime!.hour,
+                        ),
+                      ),
                       children: hourOption.map((e) {
                         return Container(
                           height: 35,
@@ -381,6 +423,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               selectedEndTime!.day, selectedEndTime!.hour, minuteOption[index]);
                         }
                       },
+                      scrollController: FixedExtentScrollController(
+                        initialItem: minuteOption.indexOf(
+                          (isSettingStartTime) ? selectedStartTime!.minute : selectedEndTime!.minute,
+                        ),
+                      ),
                       children: minuteOption.map((e) {
                         return Container(
                           height: 35,
@@ -441,6 +488,19 @@ class _HomeScreenState extends State<HomeScreen> {
         return Column(children: list);
       },
     );
+  }
+
+  ///
+  bool validate() {
+    if (selectedEndTime == null) {
+      debugPrint('end time is null');
+      return false;
+    } else if (selectedStartTime!.isAfter(selectedEndTime!)) {
+      debugPrint('start & end wrong');
+      return false;
+    }
+
+    return true;
   }
 }
 
