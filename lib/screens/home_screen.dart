@@ -107,10 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Expanded(
                     child: Container(
                       alignment: Alignment.center,
-                      child: Text(
-                        e,
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                      child: Text(e, style: const TextStyle(color: Colors.white)),
                     ),
                   );
                 }).toList(),
@@ -127,9 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   await showDialog(
                     context: context,
-                    builder: (context) {
-                      return buildAddScheduleDialog();
-                    },
+                    builder: (context) => buildAddScheduleDialog(),
                   );
 
                   titleController.clear();
@@ -156,9 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 IconButton(
                   splashRadius: 10,
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.cancel),
                 ),
                 Expanded(
@@ -188,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     selectedEndTime = null;
 
-                    Navigator.pop(context);
+                    Navigator.pop(context, true);
                   },
                   icon: const Icon(Icons.send),
                 ),
@@ -204,9 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       await showDialog(
                         context: context,
-                        builder: (context) {
-                          return buildSelectTimeDialog();
-                        },
+                        builder: (context) => buildSelectTimeDialog(),
                       );
 
                       setState(() {});
@@ -237,9 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       await showDialog(
                         context: context,
-                        builder: (context) {
-                          return buildSelectTimeDialog();
-                        },
+                        builder: (context) => buildSelectTimeDialog(),
                       );
 
                       setState(() {});
@@ -277,9 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 IconButton(
                   splashRadius: 10,
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.cancel),
                 ),
                 const Expanded(
@@ -290,9 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 IconButton(
                   splashRadius: 10,
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.send),
                 ),
               ],
@@ -319,11 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       children: yearOption.map((e) {
-                        return Container(
-                          height: 35,
-                          alignment: Alignment.center,
-                          child: Text(e.toString()),
-                        );
+                        return Container(height: 35, alignment: Alignment.center, child: Text(e.toString()));
                       }).toList(),
                     ),
                   ),
@@ -424,9 +405,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       },
                       scrollController: FixedExtentScrollController(
-                        initialItem: minuteOption.indexOf(
-                          (isSettingStartTime) ? selectedStartTime!.minute : selectedEndTime!.minute,
-                        ),
+                        initialItem: minuteOption
+                            .indexOf((isSettingStartTime) ? selectedStartTime!.minute : selectedEndTime!.minute),
                       ),
                       children: minuteOption.map((e) {
                         return Container(
@@ -467,6 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
               scheduleList: scheduleMap[DateTime(date.year, date.month, i + 1)],
               selectDate: selectDate,
               selectedDate: selectedDate,
+              editSchedule: editSchedule,
             ),
           );
 
@@ -502,6 +483,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return true;
   }
+
+  ///
+  Future<void> editSchedule({required int index, required Schedule selectedSchedule}) async {
+    selectedStartTime = selectedSchedule.startAt;
+    selectedEndTime = selectedSchedule.endAt;
+    titleController.text = selectedSchedule.title;
+
+    final result = await showDialog(context: context, builder: (context) => buildAddScheduleDialog());
+
+    if (result) {
+      scheduleMap[
+              DateTime(selectedSchedule.startAt.year, selectedSchedule.startAt.month, selectedSchedule.startAt.day)]!
+          .removeAt(index);
+    }
+
+    setState(() {});
+  }
 }
 
 // ignore: must_be_immutable
@@ -514,6 +512,7 @@ class CalendarItem extends StatelessWidget {
     this.scheduleList,
     required this.selectedDate,
     required this.selectDate,
+    required this.editSchedule,
   });
 
   final int day;
@@ -522,6 +521,7 @@ class CalendarItem extends StatelessWidget {
   final List<Schedule>? scheduleList;
   final DateTime selectedDate;
   final Function selectDate;
+  final Function editSchedule;
 
   ///
   @override
@@ -532,9 +532,7 @@ class CalendarItem extends StatelessWidget {
 
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          selectDate(cacheDate);
-        },
+        onTap: () => selectDate(cacheDate),
         child: Container(
           alignment: Alignment.topLeft,
           decoration: BoxDecoration(
@@ -557,7 +555,44 @@ class CalendarItem extends StatelessWidget {
                       ? Container()
                       : Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: scheduleList!.map((e) => Text(e.title)).toList(),
+                          children: scheduleList!
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) => GestureDetector(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return CupertinoAlertDialog(
+                                          title: Text(e.value.title),
+                                          actions: [
+                                            CupertinoDialogAction(
+                                              child: const Text('edit'),
+                                              onPressed: () {
+                                                Navigator.pop(context);
+
+                                                editSchedule(index: e.key, selectedSchedule: e.value);
+                                              },
+                                            ),
+                                            CupertinoDialogAction(
+                                              onPressed: () {},
+                                              isDestructiveAction: true,
+                                              child: const Text('delete'),
+                                            ),
+                                            CupertinoDialogAction(
+                                              child: const Text('cancel'),
+                                              onPressed: () => Navigator.pop(context),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: SizedBox(width: double.infinity, child: Text(e.value.title)),
+                                ),
+                              )
+                              .toList(),
                         ),
                 ],
               ),
