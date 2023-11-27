@@ -448,6 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
               selectDate: selectDate,
               selectedDate: selectedDate,
               editSchedule: editSchedule,
+              deleteSchedule: deleteSchedule,
             ),
           );
 
@@ -492,11 +493,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final result = await showDialog(context: context, builder: (context) => buildAddScheduleDialog());
 
-    if (result) {
+    if (result == true) {
       scheduleMap[
               DateTime(selectedSchedule.startAt.year, selectedSchedule.startAt.month, selectedSchedule.startAt.day)]!
           .removeAt(index);
     }
+
+    setState(() {});
+  }
+
+  ///
+  void deleteSchedule({required int index, required Schedule selectedSchedule}) {
+    scheduleMap[DateTime(selectedSchedule.startAt.year, selectedSchedule.startAt.month, selectedSchedule.startAt.day)]!
+        .removeAt(index);
 
     setState(() {});
   }
@@ -513,6 +522,7 @@ class CalendarItem extends StatelessWidget {
     required this.selectedDate,
     required this.selectDate,
     required this.editSchedule,
+    required this.deleteSchedule,
   });
 
   final int day;
@@ -522,6 +532,7 @@ class CalendarItem extends StatelessWidget {
   final DateTime selectedDate;
   final Function selectDate;
   final Function editSchedule;
+  final Function deleteSchedule;
 
   ///
   @override
@@ -576,7 +587,10 @@ class CalendarItem extends StatelessWidget {
                                               },
                                             ),
                                             CupertinoDialogAction(
-                                              onPressed: () {},
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                                deleteSchedule(index: e.key, selectedSchedule: e.value);
+                                              },
                                               isDestructiveAction: true,
                                               child: const Text('delete'),
                                             ),
